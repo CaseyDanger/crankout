@@ -27,7 +27,7 @@ end
 
 function Ball:attachToPaddle()
 	local px, py = self.player:getPosition()
-	local xTarget = px + ( self.player.width / 2 )
+	local xTarget = px 
 	local yTarget = py
 	self:moveTo( xTarget, yTarget )
 	self:toggleCollision()
@@ -45,8 +45,8 @@ end
 
 function Ball:attachedMove()
 	local px, py = self.player:getPosition()
-	local xTarget = px + ( self.player.width / 2 )
-	local yTarget = py - 5
+	local xTarget = px 
+	local yTarget = py - 9
 	self:moveTo( xTarget, yTarget )
 end
 

@@ -1,9 +1,10 @@
 local pd <const> = playdate
 local gfx <const> = pd.graphics
-local pnt <const> = playdate.geometry.point
+local pnt <const> = pd.geometry.point
 local v2d <const> = pd.geometry.vector2D
 local min, max, abs, floor = math.min, math.max, math.abs, math.floor
 
+local af = pd.geometry.affineTransform.new()
 local defaultRadius = 1
 local dt = 0.05
 local MAX_VELOCITY = 600
@@ -14,9 +15,8 @@ class("Player").extends(gfx.sprite)
 
 function Player:init( x, y, width, height )
 	self:moveTo( x, y )
-	self:setSize( width, height )
-	self:setCenter( 0, 0 )
-	self:setCollideRect( 0, 0, width, height )
+	self:setSize( width, 100 )
+	self:setCenter( 0.5, 1 )
 	self._x = x
 	self._y = y
 	self.dx = 0
@@ -25,6 +25,10 @@ function Player:init( x, y, width, height )
 	self._height = height
 	self.position = pnt.new( x, y )
 	self.velocity = v2d.new( 0, 0 )
+	self.paddleRect = pd.geometry.rect.new( ( ( self.width / 2 ) - ( width / 2 ) ), self.height - height, width, height )
+	self:setCollideRect( self.paddleRect )
+	self.paddle = pd.geometry.lineSegment.new( width / 2, self.height / 2, width / 2, self.height - height )
+	self.paddleAxis = pnt.new( width / 2, self.height - height )
 	self.moveSpeed = 20
 	self.skidding = false
 end
@@ -32,7 +36,10 @@ end
 function Player:draw()
 	local cx, cy, width, height = self:getCollideBounds()
 	gfx.setColor(gfx.kColorBlack)
-	gfx.fillRoundRect( 0, 0, width, height, defaultRadius )
+	gfx.fillRoundRect( self.paddleRect, defaultRadius )
+	gfx.setLineWidth(1)
+	gfx.setLineCapStyle(gfx.kLineCapStyleRound)
+	gfx.drawLine( self.paddle )
 end
 
 function Player:updatePositionDpad()
@@ -73,8 +80,6 @@ function Player:updatePositionWithCrank()
 	self.position.x += moveAmtAcc
 	self.velocity.x = min( abs(moveAmtAcc), MAX_VELOCITY )
 
-	print(self.velocity.x)
-
 	local cols, cols_len
 	self.position.x, self.position.y, cols, cols_len = self:moveWithCollisions( self.position )
 	
@@ -86,27 +91,52 @@ function Player:updatePositionWithCrank()
 	end
 end
 
+function Player:rotatePaddle()
+	local moveAmt, moveAmtAcc = pd.getCrankChange()
+	af:reset()
+	af:rotate( moveAmt, self.paddleAxis )
+	af:transformLineSegment( self.paddle )
+	self:markDirty()
+end
+
 function Player:update()
 	Player.super.update(self)
 	
-	if pd.isCrankDocked() then
-		if self.skidding == true then
-			self.velocity.x = self.velocity.x * SKID_FRICTION
-		else
-			self.velocity.x = self.velocity.x * NORMAL_FRICTION
-		end
-		
-		if abs(self.velocity.x) < 10 then
-			self.skidding = false
-			self.velocity.x = 0
-		end
-		
-		local velocityStep = self.velocity.x * dt
-		self.position.x = self.position.x + velocityStep
-		
-		self:updatePositionDpad()
+	-- if pd.isCrankDocked() then
+	-- 	if self.skidding == true then
+	-- 		self.velocity.x = self.velocity.x * SKID_FRICTION
+	-- 	else
+	-- 		self.velocity.x = self.velocity.x * NORMAL_FRICTION
+	-- 	end
+	-- 	
+	-- 	if abs(self.velocity.x) < 10 then
+	-- 		self.skidding = false
+	-- 		self.velocity.x = 0
+	-- 	end
+	-- 	
+	-- 	local velocityStep = self.velocity.x * dt
+	-- 	self.position.x = self.position.x + velocityStep
+	-- 	
+	-- 	self:updatePositionDpad()
+	-- else
+	-- 	self:updatePositionWithCrank()
+	-- end
+	
+	if self.skidding == true then
+		self.velocity.x = self.velocity.x * SKID_FRICTION
 	else
-		self:updatePositionWithCrank()
+		self.velocity.x = self.velocity.x * NORMAL_FRICTION
 	end
+	
+	if abs(self.velocity.x) < 10 then
+		self.skidding = false
+		self.velocity.x = 0
+	end
+	
+	local velocityStep = self.velocity.x * dt
+	self.position.x = self.position.x + velocityStep
+	
+	self:updatePositionDpad()
+	self:rotatePaddle()
 	
 end

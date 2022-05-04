@@ -42,11 +42,13 @@ function drawBricks()
 	local windowWidthChunk = pd.display.getWidth() / 10
 	local initX = windowWidthChunk
 	local initY = 20
+	local initHealth = 6
 	for i = 1, 5 do
 		local brickY = initY * i
+		local brickHealth = initHealth - i
 		for j = 1, 8 do
 			local brickX = initX * j
-			Brick( brickX, brickY, 30, 5 )
+			Brick( brickX, brickY, 30, 5, brickHealth )
 		end
 	end
 end
