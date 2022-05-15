@@ -6,7 +6,7 @@ local min, max, abs, floor = math.min, math.max, math.abs, math.floor
 
 local af = pd.geometry.affineTransform.new()
 local defaultRadius = 1
-local dt = 0.05
+local dt = 0.06
 local MAX_VELOCITY = 600
 local NORMAL_FRICTION = 0.8
 local SKID_FRICTION = 0.7
@@ -37,9 +37,9 @@ function Player:draw()
 	local cx, cy, width, height = self:getCollideBounds()
 	gfx.setColor(gfx.kColorBlack)
 	gfx.fillRoundRect( self.paddleRect, defaultRadius )
-	gfx.setLineWidth(1)
-	gfx.setLineCapStyle(gfx.kLineCapStyleRound)
-	gfx.drawLine( self.paddle )
+	-- gfx.setLineWidth(1)
+	-- gfx.setLineCapStyle(gfx.kLineCapStyleRound)
+	-- gfx.drawLine( self.paddle )
 end
 
 function Player:updatePositionDpad()
@@ -77,16 +77,21 @@ end
 function Player:updatePositionWithCrank()
 	local moveAmt, moveAmtAcc = pd.getCrankChange()
 	
-	self.position.x += moveAmtAcc
-	self.velocity.x = min( abs(moveAmtAcc), MAX_VELOCITY )
+	self.velocity.x += moveAmt
+	-- local velocityStep = self.velocity.x * dt
+	local velocityStep = self.velocity.x * dt
+	self.position.x = self.position.x + velocityStep
+	
+	-- self.velocity.x = min( abs(moveAmt), MAX_VELOCITY )
+
 
 	local cols, cols_len
 	self.position.x, self.position.y, cols, cols_len = self:moveWithCollisions( self.position )
 	
 	for i=1, cols_len do
 		local c = cols[i]
-		if c.other:isa(Wall) then
-			-- self.position.x = actualX
+		if c.other:isa(Ball) then
+			print( c.touch )
 		end
 	end
 end
@@ -99,28 +104,46 @@ function Player:rotatePaddle()
 	self:markDirty()
 end
 
+function Player:getPaddleHitPoint( ballPoint )
+	local pSide
+	local pStart = self.position.x - ( self.width / 2 )
+	local pSegLength = self.width / 3
+	local pLeft = { segStart = pStart, segEnd = pStart + pSegLength }
+	local pMid = { segStart = pLeft.segEnd, segEnd = pLeft.segEnd + pSegLength }
+	local pRight = { segStart = pMid.segEnd, segEnd = pMid.segEnd + pSegLength }
+	
+	if ballPoint.x >= pLeft.segStart and ballPoint.x <= pLeft.segEnd then
+		pSide = "left"
+	elseif ballPoint.x >= pMid.segStart and ballPoint.x <= pMid.segEnd then
+		pSide = "middle"
+	elseif ballPoint.x >= pRight.segStart and ballPoint.x <= pRight.segEnd then
+		pSide = "right"	
+	end
+	print( pSide )
+end
+
 function Player:update()
 	Player.super.update(self)
 	
-	-- if pd.isCrankDocked() then
-	-- 	if self.skidding == true then
-	-- 		self.velocity.x = self.velocity.x * SKID_FRICTION
-	-- 	else
-	-- 		self.velocity.x = self.velocity.x * NORMAL_FRICTION
-	-- 	end
-	-- 	
-	-- 	if abs(self.velocity.x) < 10 then
-	-- 		self.skidding = false
-	-- 		self.velocity.x = 0
-	-- 	end
-	-- 	
-	-- 	local velocityStep = self.velocity.x * dt
-	-- 	self.position.x = self.position.x + velocityStep
-	-- 	
-	-- 	self:updatePositionDpad()
-	-- else
-	-- 	self:updatePositionWithCrank()
-	-- end
+	if pd.isCrankDocked() then
+		if self.skidding == true then
+			self.velocity.x = self.velocity.x * SKID_FRICTION
+		else
+			self.velocity.x = self.velocity.x * NORMAL_FRICTION
+		end
+		
+		if abs(self.velocity.x) < 10 then
+			self.skidding = false
+			self.velocity.x = 0
+		end
+		
+		local velocityStep = self.velocity.x * dt
+		self.position.x = self.position.x + velocityStep
+		
+		self:updatePositionDpad()
+	else
+		self:updatePositionWithCrank()
+	end
 	
 	if self.skidding == true then
 		self.velocity.x = self.velocity.x * SKID_FRICTION
@@ -128,15 +151,15 @@ function Player:update()
 		self.velocity.x = self.velocity.x * NORMAL_FRICTION
 	end
 	
-	if abs(self.velocity.x) < 10 then
-		self.skidding = false
-		self.velocity.x = 0
-	end
+	-- if abs(self.velocity.x) < 10 then
+	-- 	self.skidding = false
+	-- 	self.velocity.x = 0
+	-- end
 	
-	local velocityStep = self.velocity.x * dt
-	self.position.x = self.position.x + velocityStep
+	-- local velocityStep = self.velocity.x * dt
+	-- self.position.x = self.position.x + velocityStep
 	
-	self:updatePositionDpad()
-	self:rotatePaddle()
+	-- self:updatePositionDpad()
+	-- self:rotatePaddle()
 	
 end

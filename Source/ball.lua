@@ -19,7 +19,7 @@ function Ball:init( x, y, r, player )
 	self:setSize( diameter, diameter )
 	self:setCollideRect( 0, 0, diameter, diameter )
 	self.position = pnt.new( x, y )
-	self.velocity = v2d.new( 20, -60 )
+	self.velocity = v2d.new( 0, -60 )
 	self.attached = false
 	self.moveSpeed = MIN_VELOCITY
 	self.player = player
@@ -105,18 +105,21 @@ function Ball:update()
 			  local col = cols[i]
 				local paddleHit = col.other:isa(Player)
 				local brickHit = col.other:isa(Brick)
-				local xtraVelocity = 0
+				-- local xtraVelocity = 0
 				
 				if paddleHit then
-					if self.player.velocity.x <= MIN_VELOCITY then
-						xtraVelocity = max( self.velocity.x * 0.5, MIN_VELOCITY )
-						velocityStep = self.velocity * dt
-						self.position = self.position + velocityStep
-					else
-						xtraVelocity = abs( self.player.velocity.x / 2 )
-						velocityStep = self.velocity * dt
-						self.position = self.position + velocityStep
-					end
+					col.other:getPaddleHitPoint( pnt.new( self.x, self.y ) )
+					self.velocity.x += ( (1 - 0.3) * self.player.velocity.x * 2 )
+					self.position = self.position + self.velocity
+					-- if self.player.velocity.x <= MIN_VELOCITY then
+					-- 	xtraVelocity = max( self.velocity.x * 0.5, MIN_VELOCITY )
+					-- 	velocityStep = self.velocity * dt
+					-- 	self.position = self.position + velocityStep
+					-- else
+					-- 	xtraVelocity = abs( self.player.velocity.x / 2 )
+					-- 	velocityStep = self.velocity * dt
+					-- 	self.position = self.position + velocityStep
+					-- end
 				end
 				
 				if brickHit then
@@ -125,12 +128,12 @@ function Ball:update()
 				
 				if col.normal.x ~= 0 then -- hit something in the X direction
 					self:beep()
-					self.velocity.x = -(self.velocity.x + xtraVelocity)
+					self.velocity.x = -self.velocity.x
 				end
 				
 				if col.normal.y ~= 0 then -- hit something in the Y direction
 					self:boop()
-					self.velocity.y = -(self.velocity.y + xtraVelocity)
+					self.velocity.y = -self.velocity.y
 				end
 			end
 		end

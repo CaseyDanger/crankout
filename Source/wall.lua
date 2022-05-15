@@ -11,6 +11,7 @@ end
 
 function Wall:draw( x, y, width, height )
 	local cx, cy, width, height = self:getCollideBounds()
-	gfx.setPattern({ 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55 })
+	-- gfx.setPattern({ 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55, 0xaa, 0x55 })
+	gfx.setColor(gfx.kColorBlack)
 	gfx.fillRect(cx, cy, width, height)
 end

@@ -5,7 +5,9 @@ import "CoreLibs/graphics"
 import "CoreLibs/sprites"
 import "CoreLibs/timer"
 import 'CoreLibs/frameTimer'
+import 'CoreLibs/animation'
 
+import "animations"
 import "player"
 import "ball"
 import "wall"
@@ -28,14 +30,14 @@ function initialize()
 end
 
 function createWindowBounds()
-	local padding = 5
+	local padding = 15
 	local displayWidth = pd.display.getWidth()
 	local displayHeight = pd.display.getHeight()
 	
-	Wall( 0, 0, displayWidth, padding )
-	Wall( 0, padding, padding, displayHeight - padding * 2 )
-	Wall( displayWidth - padding, padding, padding, displayHeight- padding * 2 )
-	Wall( 0, displayHeight - padding, displayWidth, padding )
+	Wall( 0, 0, displayWidth, padding ) -- Top Wall
+	Wall( 0, padding, padding, displayHeight - padding ) -- Left Wall
+	Wall( displayWidth - padding, padding, padding, displayHeight- padding ) -- Right Wall
+	-- Wall( 0, displayHeight - padding, displayWidth, padding ) -- Bottom Wall
 end
 
 function drawBricks()
@@ -45,10 +47,15 @@ function drawBricks()
 	local initHealth = 6
 	for i = 1, 5 do
 		local brickY = initY * i
-		local brickHealth = initHealth - i
+		local brickHealth = 1
 		for j = 1, 8 do
 			local brickX = initX * j
-			Brick( brickX, brickY, 30, 5, brickHealth )
+			local tf = {true, false}
+			local applyAnimation = tf[ math.random(1, 2) ]
+			local currBrick = Brick( brickX, brickY, 35, 13, brickHealth )
+			if applyAnimation then
+				Animations:blinkAnimation( currBrick, math.random(1, 10) )
+			end
 		end
 	end
 end
